@@ -6,7 +6,7 @@ import mujoco.viewer
 
 
 model_path = (
-    Path(__file__).resolve().parents[1]
+    Path(__file__).resolve().parents[2]
     / "assets"
     / "single_pendulum.xml"
 )

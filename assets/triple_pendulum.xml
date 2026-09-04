@@ -1,0 +1,95 @@
+<mujoco model="triple pendulum">
+    <option
+        timestep="0.01"
+        gravity="0 0 -9.81"
+        integrator="RK4"
+    />
+
+    <worldbody>
+        <light pos="0 0 4"/>
+
+        <geom
+            name="floor"
+            type="plane"
+            size="4 4 0.1"
+            rgba="0.9 0.9 0.9 1"
+        />
+
+        <body name="link1" pos="0 0 2.7">
+            <joint
+                name="joint1"
+                type="hinge"
+                axis="0 1 0"
+                damping="0.05"
+            />
+
+            <geom
+                name="rod1"
+                type="capsule"
+                fromto="0 0 0 0 0 -0.8"
+                size="0.05"
+                mass = "0.2"
+                rgba="0.9 0.2 0.2 1"
+            />
+
+            <body name="link2" pos="0 0 -0.8">
+                <joint
+                    name="joint2"
+                    type="hinge"
+                    axis="0 1 0"
+                    damping="0.05"
+                />
+
+                <geom
+                    name="rod2"
+                    type="capsule"
+                    fromto="0 0 0 0 0 -0.8"
+                    size="0.05"
+                    mass = "0.2"
+                    rgba="0.2 0.7 0.3 1"
+                />
+
+                <body name="link3" pos="0 0 -0.8">
+                    <joint
+                        name="joint3"
+                        type="hinge"
+                        axis="0 1 0"
+                        damping="0.05"
+                    />
+
+                    <geom
+                        name="rod3"
+                        type="capsule"
+                        fromto="0 0 0 0 0 -0.8"
+                        size="0.05"
+                        mass = "0.2"
+                        rgba="0.2 0.4 0.9 1"
+                    />
+                </body>
+            </body>
+        </body>
+    </worldbody>
+
+    <actuator>
+        <motor
+            name="motor1"
+            joint="joint1"
+            ctrllimited="true"
+            ctrlrange="-10 10"
+        />
+
+        <motor
+            name="motor2"
+            joint="joint2"
+            ctrllimited="true"
+            ctrlrange="-10 10"
+        />
+
+        <motor
+            name="motor3"
+            joint="joint3"
+            ctrllimited="true"
+            ctrlrange="-10 10"
+        />
+    </actuator>
+</mujoco>

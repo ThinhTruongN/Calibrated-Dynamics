@@ -1,0 +1,75 @@
+<mujoco model="underactuated triple pendulum">
+    <compiler angle="radian" autolimits="true"/>
+
+    <option
+        timestep="0.01"
+        gravity="0 0 -9.81"
+        integrator="RK4"
+    />
+
+    <visual>
+        <headlight ambient="0.35 0.35 0.35" diffuse="0.7 0.7 0.7"/>
+    </visual>
+
+    <default>
+        <joint axis="0 1 0" damping="0.03" frictionloss="0.002" armature="0.002"/>
+        <geom type="capsule" size="0.05" mass="0.2"/>
+        <site type="sphere" size="0.025"/>
+    </default>
+
+    <worldbody>
+        <light pos="0 -2 5"/>
+        <camera name="side" pos="0 -8 2.7" xyaxes="1 0 0 0 0 1"/>
+
+        <geom
+            name="floor"
+            type="plane"
+            size="4 4 0.1"
+            mass="0"
+            rgba="0.9 0.9 0.9 1"
+        />
+
+        <body name="link1" pos="0 0 2.7">
+            <joint name="joint1" type="hinge"/>
+            <geom
+                name="rod1"
+                fromto="0 0 0 0 0 -0.8"
+                rgba="0.9 0.2 0.2 1"
+            />
+            <site name="link1_endpoint" pos="0 0 -0.8" rgba="1 0.8 0.1 1"/>
+
+            <body name="link2" pos="0 0 -0.8">
+                <joint name="joint2" type="hinge"/>
+                <geom
+                    name="rod2"
+                    fromto="0 0 0 0 0 -0.8"
+                    rgba="0.2 0.7 0.3 1"
+                />
+                <site name="link2_endpoint" pos="0 0 -0.8" rgba="1 0.8 0.1 1"/>
+
+                <body name="link3" pos="0 0 -0.8">
+                    <joint name="joint3" type="hinge"/>
+                    <geom
+                        name="rod3"
+                        fromto="0 0 0 0 0 -0.8"
+                        rgba="0.2 0.4 0.9 1"
+                    />
+                    <site name="link3_endpoint" pos="0 0 -0.8" rgba="1 0.8 0.1 1"/>
+                </body>
+            </body>
+        </body>
+    </worldbody>
+
+    <actuator>
+        <!-- The passive joints intentionally have no actuator. -->
+        <motor
+            name="base_motor"
+            joint="joint1"
+            gear="1"
+            ctrllimited="true"
+            ctrlrange="-2 2"
+            forcelimited="true"
+            forcerange="-2 2"
+        />
+    </actuator>
+</mujoco>
