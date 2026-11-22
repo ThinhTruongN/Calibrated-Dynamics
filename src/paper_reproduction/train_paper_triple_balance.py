@@ -62,7 +62,8 @@ def main():
     with (run_directory / "configuration.json").open("w", encoding="ascii") as file:
         json.dump(configuration, file, indent=2)
 
-    env = Monitor(PaperTripleBalanceEnv())
+    # Episode rewards/lengths go to monitor.csv for learning curves.
+    env = Monitor(PaperTripleBalanceEnv(), filename=str(run_directory / "monitor"))
     callback = CheckpointCallback(
         save_freq=args.checkpoint_freq,
         save_path=str(run_directory),
