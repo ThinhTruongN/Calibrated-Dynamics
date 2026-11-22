@@ -1,0 +1,6 @@
+{
+  "transitions": 19825,
+  "episodes": 2000,
+  "fit_seconds": 13.459661960601807,
+  "best_holdout_mse": 0.0003286612336523831
+}
