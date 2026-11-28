@@ -45,18 +45,16 @@ DEFAULT_R = 1.0
 
 def learned_linearization(model, eps=1e-3):
     """(A, B) of the ensemble-mean dynamics at the upright equilibrium."""
-    def mean_next(states, u):
-        mu, _ = model.predict_members(states, np.full(len(states), u))
-        return mu.mean(0).astype(np.float64)
-
-    def drift(states):
-        return 0.5 * (mean_next(states, 1.0) + mean_next(states, -1.0))
-
     eye = np.eye(8)
-    A = np.stack([(drift(eps * eye[i:i + 1]) - drift(-eps * eye[i:i + 1]))[0] / (2 * eps)
-                  for i in range(8)], axis=1)
-    zero = np.zeros((1, 8))
-    B = (0.5 * (mean_next(zero, 1.0) - mean_next(zero, -1.0)))[0][:, None]
+    base = np.vstack([eps * eye, -eps * eye, np.zeros((1, 8))])  # (17, 8)
+    states = np.vstack([base, base])                             # (34, 8)
+    actions = np.concatenate([np.ones(17), -np.ones(17)])        # (34,)
+    mu, _ = model.predict_members(states, actions)
+    mean = mu.mean(0).astype(np.float64)
+    plus, minus = mean[:17], mean[17:]
+    drift = 0.5 * (plus[:16] + minus[:16])
+    A = ((drift[:8] - drift[8:16]) / (2 * eps)).T
+    B = (0.5 * (plus[16] - minus[16]))[:, None]
     return A, B
 
 
@@ -64,11 +62,29 @@ class LearnedLQR:
     """Bang-bang LQR from the learned model's linearization."""
 
     def __init__(self, model, Q=DEFAULT_Q, R=DEFAULT_R):
-        self.A, self.B = learned_linearization(model)
-        R = np.array([[R]])
-        self.P = solve_discrete_are(self.A, self.B, Q, R)
-        self.K = np.linalg.solve(R + self.B.T @ self.P @ self.B, self.B.T @ self.P @ self.A)
+        self.model = model
         self.Q = Q
+        self.R = np.array([[R]], dtype=np.float64)
+        if not self.update_linearization(model):
+            raise RuntimeError("Failed to compute LQR linearization for initial model")
+
+    def update_linearization(self, model=None):
+        """Re-linearize the dynamics at upright and re-solve the discrete ARE.
+
+        Returns True if the new solution is valid and applied, False otherwise.
+        """
+        if model is not None:
+            self.model = model
+        try:
+            A, B = learned_linearization(self.model)
+            P = solve_discrete_are(A, B, self.Q, self.R)
+            K = np.linalg.solve(self.R + B.T @ P @ B, B.T @ P @ A)
+        except Exception:
+            return False
+        if not (np.all(np.isfinite(P)) and np.all(np.isfinite(K))):
+            return False
+        self.A, self.B, self.P, self.K = A, B, P, K
+        return True
 
     def reset(self):
         pass
@@ -94,6 +110,16 @@ class PolicyCEMPlanner:
         self.margins = torch.zeros(horizon, 4)
         self.generator = torch.Generator().manual_seed(seed)
         self.reset()
+
+    def update_linearization(self, model=None):
+        """Point the planner at an updated model and refresh its LQR base policy and terminal cost."""
+        if model is not None:
+            self.model = model
+        if self.lqr.update_linearization(self.model):
+            self.K = torch.as_tensor(self.lqr.K[0], dtype=torch.float32)
+            self.P = torch.as_tensor(self.lqr.P, dtype=torch.float32)
+            return True
+        return False
 
     def reset(self):
         self.mu = torch.zeros(self.horizon)
